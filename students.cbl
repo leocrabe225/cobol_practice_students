@@ -68,6 +68,7 @@
                10 WS-C-NAME       PIC X(21).
                10 WS-C-COEF       PIC 9(01)V9(01).
                10 WS-C-AVERAGE    PIC 9(02)V9(02).
+           05 WS-CLASS-AVERAGE    PIC 9(02)V9(02).
            05 WS-STUDENT OCCURS 1 TO 999 TIMES 
                          DEPENDING ON WS-STUDENT-LGHT.
                10 WS-S-FIRSTNAME  PIC X(06).
@@ -80,8 +81,12 @@
        77 WS-IDX-1                PIC 9(04).
        77 WS-IDX-2                PIC 9(02).
 
+      * Used to calculate individual student and course averages.
        77 WS-MATH-BUFFER          PIC 9(05)V9(02).
+      * Used to count the total coefficient.
        77 WS-MATH-BUFFER-2        PIC 9(02)V9(01).
+      * Used to calculate class average.
+       77 WS-MATH-BUFFER-3        PIC 9(05)V9(02).
 
        PROCEDURE DIVISION.
            
@@ -147,12 +152,14 @@
                        UNTIL WS-IDX-1 > WS-STUDENT-LGHT
                    ADD WS-S-GRADE(WS-IDX-1, WS-IDX-2) TO WS-MATH-BUFFER
                END-PERFORM
-               DIVIDE WS-STUDENT-LGHT INTO WS-MATH-BUFFER
+               COMPUTE WS-MATH-BUFFER ROUNDED = 
+                   WS-MATH-BUFFER / WS-STUDENT-LGHT
                MOVE WS-MATH-BUFFER TO WS-C-AVERAGE(WS-IDX-2)
            END-PERFORM.
        0210-COMPUTE-COURSE-AVERAGE-END.
 
        0220-COMPUTE-STUDENT-AVERAGE-BEGIN.
+           MOVE 0 TO WS-MATH-BUFFER-3.
            PERFORM VARYING WS-IDX-1 FROM 1 BY 1 
                        UNTIL WS-IDX-1 > WS-STUDENT-LGHT
                    MOVE 0 TO WS-MATH-BUFFER
@@ -164,9 +171,14 @@
                            WS-C-COEF(WS-IDX-2)
                    ADD WS-C-COEF(WS-IDX-2) TO WS-MATH-BUFFER-2
                END-PERFORM
-               DIVIDE WS-MATH-BUFFER-2 INTO WS-MATH-BUFFER
+               COMPUTE WS-MATH-BUFFER ROUNDED = 
+                   WS-MATH-BUFFER / WS-MATH-BUFFER-2
                MOVE WS-MATH-BUFFER TO WS-S-AVERAGE(WS-IDX-1)
+               ADD WS-MATH-BUFFER TO WS-MATH-BUFFER-3
            END-PERFORM.
+           COMPUTE WS-MATH-BUFFER-3 ROUNDED = 
+                   WS-MATH-BUFFER-3 / WS-STUDENT-LGHT
+           MOVE WS-MATH-BUFFER-3 TO WS-CLASS-AVERAGE.
        0220-COMPUTE-STUDENT-AVERAGE-END.
 
        0400-DISPLAY-TABLE-BEGIN.
@@ -177,7 +189,8 @@
                        DISPLAY "                      COEF AVERAGE "
                            WITH NO ADVANCING
                    WHEN WS-COURSE-LGHT + 1
-                       DISPLAY "             AVERAGES              "
+                       DISPLAY "             AVERAGES      "
+                           WS-CLASS-AVERAGE "   "
                            WITH NO ADVANCING
                    WHEN OTHER
                        DISPLAY WS-C-NAME(WS-IDX-2) SPACE 
