@@ -18,7 +18,7 @@
                FILE STATUS IS F-INPUT-STATUS. 
 
            SELECT F-OUTPUT
-               ASSIGN TO 'output.dat'
+               ASSIGN TO 'output/output.dat'
                ACCESS MODE IS SEQUENTIAL
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS F-OUTPUT-STATUS.   
@@ -78,8 +78,53 @@
                10 WS-S-GRADES OCCURS 10.
                    15 WS-S-GRADE  PIC 9(02)V9(02).  
 
+       01 WS-OUTPUT-SPACE-LINE       PIC X(80) VALUE ALL SPACE.
+       01 WS-OUTPUT-STAR-LINE        PIC X(80) VALUE ALL "*".
+       01 WS-OUTPUT-NOTE-REPORT      PIC X(80) VALUE "NOTES REPORT".
+       01 WS-OUTPUT-END-NOTE-REPORT  PIC X(80) VALUE "END REPORT".
+
+       01 WS-OUTPUT-HEADER.
+           05 FILLER                 PIC X(07) VALUE "NAME".
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 FILLER                 PIC X(06) VALUE "FNAME".
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 FILLER                 PIC X(07) VALUE "AVERAGE".
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 WS-HDR-CRS-OUTPUT OCCURS 1 TO 10 TIMES 
+                                DEPENDING ON WS-COURSE-LGHT.
+               10 FILLER             PIC X(01) VALUE "C".
+               10 WS-HDR-CRS-OUT-NBR PIC 9(02).
+               10 FILLER             PIC X(03) VALUE SPACE.
+       
+       01 WS-STUDENT-OUTPUT-GRADE.
+           05 WS-STUD-OUT-NAME       PIC X(07).
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 WS-STUD-OUT-FNAME      PIC X(06).
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 WS-STUD-OUT-AVG        PIC 9(02),9(02).
+           05 FILLER                 PIC X(03) VALUE SPACE.
+           05 WS-STUD-OUT OCCURS 1 TO 10 TIMES 
+                                DEPENDING ON WS-COURSE-LGHT.
+               10 WS-STUD-OUT-GRADE  PIC 9(02),9(02).
+               10 FILLER             PIC X(01) VALUE SPACE.
+
+       01 WS-FOOTER-OUTPUT-1.
+           05 FILLER                 PIC X(07) VALUE "CLASS".
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 FILLER                 PIC X(06) VALUE SPACE.
+           05 FILLER                 PIC X(01) VALUE SPACE.
+           05 WS-OUT-CLASS-AVG       PIC 9(02),9(02).
+           05 FILLER                 PIC X(03) VALUE SPACE.
+           05 WS-COURSE-OUT OCCURS 1 TO 10 TIMES 
+                                DEPENDING ON WS-COURSE-LGHT.
+               10 WS-COURSE-OUT-AVG  PIC 9(02),9(02).
+               10 FILLER             PIC X(01) VALUE SPACE.
+           
+
        77 WS-IDX-1                PIC 9(04).
        77 WS-IDX-2                PIC 9(02).
+
+       77 WS-STUDENT-ID           PIC 9(04).
 
       * Used to calculate individual student and course averages.
        77 WS-MATH-BUFFER          PIC 9(05)V9(02).
@@ -88,13 +133,25 @@
       * Used to calculate class average.
        77 WS-MATH-BUFFER-3        PIC 9(05)V9(02).
 
+       77 WS-CENTER-BUFFER        PIC X(80).
+       77 WS-CENTER-BUFFER-2      PIC X(80).
+
+       77 WS-INT-MATH-BUFFER      PIC 9(03).
+       77 WS-INT-MATH-BUFFER-2    PIC 9(03).
+
        PROCEDURE DIVISION.
            
+           PERFORM 1100-INITIALIZE-OUTPUT-LINES-BEGIN
+              THRU 1100-INITIALIZE-OUTPUT-LINES-END.
+
            PERFORM 0100-READ-INPUT-FILE-BEGIN
               THRU 0100-READ-INPUT-FILE-END.
 
            PERFORM 0200-COMPUTE-AVERAGES-BEGIN
               THRU 0200-COMPUTE-AVERAGES-END.
+
+           PERFORM 0300-WRITE-OUTPUT-FILE-BEGIN
+              THRU 0300-WRITE-OUTPUT-FILE-END.
 
            PERFORM 0400-DISPLAY-TABLE-BEGIN
               THRU 0400-DISPLAY-TABLE-END.
@@ -181,6 +238,53 @@
            MOVE WS-MATH-BUFFER-3 TO WS-CLASS-AVERAGE.
        0220-COMPUTE-STUDENT-AVERAGE-END.
 
+       0300-WRITE-OUTPUT-FILE-BEGIN.
+           OPEN OUTPUT F-OUTPUT.
+           
+           MOVE WS-OUTPUT-STAR-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+           MOVE WS-OUTPUT-NOTE-REPORT TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+           MOVE WS-OUTPUT-STAR-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           PERFORM 0500-SETUP-OUTPUT-HEADER-BEGIN
+              THRU 0500-SETUP-OUTPUT-HEADER-END.
+           MOVE WS-OUTPUT-HEADER TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           MOVE WS-OUTPUT-SPACE-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           PERFORM VARYING WS-IDX-1 FROM 1 BY 1
+                   UNTIL WS-IDX-1 > WS-STUDENT-LGHT
+               MOVE WS-IDX-1 TO WS-STUDENT-ID
+               PERFORM 0600-SETUP-OUTPUT-GRADE-BEGIN
+                  THRU 0600-SETUP-OUTPUT-GRADE-END
+               MOVE WS-STUDENT-OUTPUT-GRADE TO REC-F-OUTPUT
+               WRITE REC-F-OUTPUT
+           END-PERFORM.
+
+           MOVE WS-OUTPUT-SPACE-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           PERFORM 0700-SETUP-OUTPUT-FOOTER-1-BEGIN
+              THRU 0700-SETUP-OUTPUT-FOOTER-1-END.
+           MOVE WS-FOOTER-OUTPUT-1 TO REC-F-OUTPUT
+           WRITE REC-F-OUTPUT.
+
+           MOVE WS-OUTPUT-STAR-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           MOVE WS-OUTPUT-STAR-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           MOVE WS-OUTPUT-STAR-LINE TO REC-F-OUTPUT.
+           WRITE REC-F-OUTPUT.
+
+           CLOSE F-OUTPUT.
+       0300-WRITE-OUTPUT-FILE-END.
+
        0400-DISPLAY-TABLE-BEGIN.
            PERFORM VARYING WS-IDX-2 FROM 0 BY 1 
                    UNTIL WS-IDX-2 > WS-COURSE-LGHT + 1
@@ -215,3 +319,59 @@
                DISPLAY SPACE
            END-PERFORM.
        0400-DISPLAY-TABLE-END.
+
+       0500-SETUP-OUTPUT-HEADER-BEGIN.
+           PERFORM VARYING WS-IDX-1 FROM 1 BY 1
+                   UNTIL WS-IDX-1 > WS-STUDENT-LGHT
+               MOVE WS-IDX-1 TO WS-HDR-CRS-OUT-NBR(WS-IDX-1)
+           END-PERFORM.
+       0500-SETUP-OUTPUT-HEADER-END.
+
+       0600-SETUP-OUTPUT-GRADE-BEGIN.
+           MOVE WS-S-LASTNAME(WS-STUDENT-ID) TO WS-STUD-OUT-NAME.
+           MOVE WS-S-FIRSTNAME(WS-STUDENT-ID) TO WS-STUD-OUT-FNAME.
+           MOVE WS-S-AVERAGE(WS-STUDENT-ID) TO WS-STUD-OUT-AVG.
+
+           PERFORM VARYING WS-IDX-2 FROM 1 BY 1
+                   UNTIL WS-IDX-2 > WS-COURSE-LGHT
+               MOVE WS-S-GRADE(WS-STUDENT-ID, WS-IDX-2)
+                   TO WS-STUD-OUT-GRADE(WS-IDX-2)
+           END-PERFORM.
+       0600-SETUP-OUTPUT-GRADE-END.
+
+       0700-SETUP-OUTPUT-FOOTER-1-BEGIN.
+           MOVE WS-CLASS-AVERAGE TO WS-OUT-CLASS-AVG.
+
+           PERFORM VARYING WS-IDX-2 FROM 1 BY 1
+                   UNTIL WS-IDX-2 > WS-COURSE-LGHT
+               MOVE WS-C-AVERAGE(WS-IDX-2)
+                   TO WS-COURSE-OUT-AVG(WS-IDX-2)
+           END-PERFORM.
+       0700-SETUP-OUTPUT-FOOTER-1-END.
+
+       1100-INITIALIZE-OUTPUT-LINES-BEGIN.
+           MOVE WS-OUTPUT-NOTE-REPORT TO WS-CENTER-BUFFER.
+           PERFORM 1200-CENTER-TEXT-BEGIN
+              THRU 1200-CENTER-TEXT-END.
+           MOVE WS-CENTER-BUFFER TO WS-OUTPUT-NOTE-REPORT.
+
+           MOVE WS-OUTPUT-END-NOTE-REPORT TO WS-CENTER-BUFFER.
+           PERFORM 1200-CENTER-TEXT-BEGIN
+              THRU 1200-CENTER-TEXT-END.
+           MOVE WS-CENTER-BUFFER TO WS-OUTPUT-END-NOTE-REPORT.
+       1100-INITIALIZE-OUTPUT-LINES-END.
+
+       1200-CENTER-TEXT-BEGIN.
+           MOVE LENGTH OF WS-CENTER-BUFFER TO WS-IDX-1.
+           PERFORM UNTIL WS-IDX-1 EQUAL 0
+                   OR WS-CENTER-BUFFER(WS-IDX-1:1) NOT EQUAL SPACE
+               SUBTRACT 1 FROM WS-IDX-1
+           END-PERFORM.
+           MOVE WS-IDX-1 TO WS-INT-MATH-BUFFER.
+           COMPUTE WS-INT-MATH-BUFFER-2 = (-WS-INT-MATH-BUFFER / 2) + 
+                   (LENGTH OF WS-CENTER-BUFFER / 2) + 1.
+           MOVE SPACE TO WS-CENTER-BUFFER-2.
+           MOVE WS-CENTER-BUFFER(1:WS-IDX-1) 
+               TO WS-CENTER-BUFFER-2(WS-INT-MATH-BUFFER-2:WS-IDX-1).
+           MOVE WS-CENTER-BUFFER-2 TO WS-CENTER-BUFFER.
+       1200-CENTER-TEXT-END.
