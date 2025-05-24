@@ -1,4 +1,4 @@
-[Go back](../README.md)
+[Go back](..)
 ## Code internal structure
 ### IDENTIFICATION DIVISION.
 ```cobol
