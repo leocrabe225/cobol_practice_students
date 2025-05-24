@@ -20,8 +20,7 @@
            SELECT F-OUTPUT
                ASSIGN TO 'output/output.dat'
                ACCESS MODE IS SEQUENTIAL
-               ORGANIZATION IS LINE SEQUENTIAL
-               FILE STATUS IS F-OUTPUT-STATUS.   
+               ORGANIZATION IS LINE SEQUENTIAL.   
 
        DATA DIVISION.
        FILE SECTION.
@@ -54,10 +53,6 @@
        01  F-INPUT-STATUS      PIC X(02) VALUE SPACE.
            88 F-INPUT-STATUS-OK    VALUE '00'.        
            88 F-INPUT-STATUS-EOF   VALUE '10'.
-
-       01  F-OUTPUT-STATUS     PIC X(02) VALUE SPACE.
-           88 F-OUTPUT-STATUS-OK    VALUE '00'.        
-           88 F-OUTPUT-STATUS-EOF   VALUE '10'.
 
        01  WS-DATA-STUDENT.
            05 WS-STUDENT-LGHT PIC 9(03).

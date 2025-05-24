@@ -38,4 +38,36 @@
       * Dictates the stucture of the record when it needs to be
       * interpreted as a course.
        01 REC-COURSE.
+
+       FD F-OUTPUT.
+
+      * Simple alphanumeric of size 250 for writing the output.
+       01 REC-F-OUTPUT.
+```
+#### WORKING-STORAGE
+```cobol
+      * Flag group to handle input file status (OK / EOF).
+       01  F-INPUT-STATUS.
+
+      * Main structure, contains all student/courses related data.
+       01  WS-DATA-STUDENT.
+      * First table, contains courses names and coefficients.
+           05 WS-COURSE.
+      * Second table, dynamically sized, contains the students.
+           05 WS-STUDENT.
+      * Nested table, contains the grades.
+               10 WS-S-GRADES. 
+
+      * Multiple variables and groups used for output formatting.
+       01 WS-OUTPUT-SPACE-LINE.
+       01 WS-OUTPUT-STAR-LINE.
+       01 WS-OUTPUT-NOTE-REPORT.
+       01 WS-OUTPUT-END-NOTE-REPORT.
+       01 WS-OUTPUT-HEADER.
+       01 WS-STUDENT-OUTPUT-GRADE.
+       01 WS-FOOTER-OUTPUT-1.
+       01 WS-COURSE-OUTPUT.
+       01 WS-STUD-AMT-OUTPUT.
+       01 WS-CRS-AMT-OUTPUT.
+       01 WS-GRADE-AMT-OUTPUT.
 ```
