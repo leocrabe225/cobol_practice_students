@@ -30,8 +30,6 @@
            RECORDING MODE IS V.
 
        01  REC-F-INPUT-2       PIC 9(02).
-       01  REC-F-INPUT-10      PIC X(10).
-       01  REC-F-INPUT-100     PIC X(100).
        01  REC-F-INPUT-1000    PIC X(1000).
 
        01  REC-STUDENT.
