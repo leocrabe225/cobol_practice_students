@@ -143,6 +143,8 @@
        77 WS-IDX-1                PIC 9(04).
        77 WS-IDX-2                PIC 9(02).
 
+       77 WS-IDX-UTF              PIC 9(04).
+
        77 WS-STUDENT-ID           PIC 9(04).
 
        77 WS-COURSE-ID            PIC 9(02).
@@ -159,6 +161,8 @@
 
        77 WS-INT-MATH-BUFFER      PIC 9(03).
        77 WS-INT-MATH-BUFFER-2    PIC 9(03).
+
+       77 WS-UTF-SIZE             PIC 9(04).
 
        PROCEDURE DIVISION.
            
@@ -187,6 +191,8 @@
            PERFORM UNTIL F-INPUT-STATUS-EOF
                READ F-INPUT
                    NOT AT END
+                       PERFORM 1300-REPLACE-UTF-8-BEGIN
+                          THRU 1300-REPLACE-UTF-8-END
                        EVALUATE REC-F-INPUT-2
                            WHEN 1
                                ADD 1 TO WS-IDX-1
@@ -435,3 +441,16 @@
                TO WS-CENTER-BUFFER-2(WS-INT-MATH-BUFFER-2:WS-IDX-1).
            MOVE WS-CENTER-BUFFER-2 TO WS-CENTER-BUFFER.
        1200-CENTER-TEXT-END.
+
+       1300-REPLACE-UTF-8-BEGIN.
+           PERFORM VARYING WS-IDX-UTF FROM 1 BY 1
+                   UNTIL WS-IDX-UTF > LENGTH OF REC-F-INPUT-1000
+               IF REC-F-INPUT-1000(WS-IDX-UTF:2) EQUAL "Ç"
+                   MOVE "C" TO REC-F-INPUT-1000(WS-IDX-UTF:1)
+                   COMPUTE WS-UTF-SIZE = LENGTH OF REC-F-INPUT-1000 -
+                           WS-IDX-UTF - 2
+                   MOVE REC-F-INPUT-1000(WS-IDX-UTF + 2:WS-UTF-SIZE)
+                       TO REC-F-INPUT-1000(WS-IDX-UTF + 1: WS-UTF-SIZE)
+               END-IF
+           END-PERFORM.
+       1300-REPLACE-UTF-8-END.
