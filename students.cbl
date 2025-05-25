@@ -570,3 +570,4 @@
                MOVE WS-STUDENT-LGHT TO WS-STUDENT-ID
            END-IF.
        1500-GET-STUDENT-INDEX-END.
+       
