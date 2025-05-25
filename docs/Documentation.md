@@ -11,7 +11,7 @@
       * point in numbers.
        DECIMAL-POINT IS COMMA.
 ```
-#### FILE SECTION.
+#### FILE-CONTROL.
 ```cobol
            SELECT F-INPUT.
 
