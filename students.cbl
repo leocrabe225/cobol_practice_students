@@ -41,7 +41,7 @@
            03 R-C-KEY          PIC 9(02).       
            03 R-LABEL          PIC X(21).       
            03 R-COEF           PIC 9,9.       
-           03 R-GRADE          PIC 99,99.       
+           03 R-GRADE          PIC X(5).       
 
        FD  F-OUTPUT
            RECORD CONTAINS 250 CHARACTERS
@@ -239,14 +239,21 @@
                                   THRU 1400-GET-COURSE-INDEX-END
                                IF WS-S-GRADE-MISSING
                                   (WS-STUDENT-ID, WS-COURSE-ID) THEN
-                                   MOVE R-GRADE 
-                                       TO WS-S-GRADE
-                                       (WS-STUDENT-ID, WS-COURSE-ID)
-                                   SET WS-S-GRADE-OK
-                                       (WS-STUDENT-ID, WS-COURSE-ID)
-                                       TO TRUE
-                                   ADD 1 TO WS-S-GRADE-AMT
-                                            (WS-STUDENT-ID)
+                                   IF R-GRADE NOT EQUAL SPACE THEN
+                                       MOVE R-GRADE 
+                                           TO WS-S-GRADE
+                                           (WS-STUDENT-ID, WS-COURSE-ID)
+                                       SET WS-S-GRADE-OK
+                                           (WS-STUDENT-ID, WS-COURSE-ID)
+                                           TO TRUE
+                                       ADD 1 TO WS-S-GRADE-AMT
+                                                (WS-STUDENT-ID)
+                                   ELSE
+                                       DISPLAY "Missing grade number "
+                                           "for " 
+                                           WS-S-LASTNAME(WS-STUDENT-ID)
+                                           " in " R-LABEL
+                                   END-IF
                                ELSE
                                    DISPLAY "Duplicate grade for "
                                            WS-S-LASTNAME(WS-STUDENT-ID)
@@ -570,4 +577,3 @@
                MOVE WS-STUDENT-LGHT TO WS-STUDENT-ID
            END-IF.
        1500-GET-STUDENT-INDEX-END.
-       
