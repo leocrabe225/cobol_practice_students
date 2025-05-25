@@ -68,8 +68,12 @@
                10 WS-S-LASTNAME   PIC X(07).
                10 WS-S-AGE        PIC 9(02).
                10 WS-S-AVERAGE    PIC 9(02)V9(02).
+               10 WS-S-GRADE-AMT  PIC 9(02).
                10 WS-S-GRADES OCCURS 10.
                    15 WS-S-GRADE  PIC 9(02)V9(02).  
+                   15 WS-S-GRADE-STATUS PIC 9(01) VALUE 1.
+                       88 WS-S-GRADE-OK           VALUE 0.
+                       88 WS-S-GRADE-MISSING      VALUE 1.
 
        01 WS-OUTPUT-SIZE             PIC 9(03).
 
@@ -96,11 +100,11 @@
            05 FILLER                 PIC X(01) VALUE SPACE.
            05 WS-STUD-OUT-FNAME      PIC X(06).
            05 FILLER                 PIC X(01) VALUE SPACE.
-           05 WS-STUD-OUT-AVG        PIC 9(02),9(02).
+           05 WS-STUD-OUT-AVG        PIC X(05).
            05 FILLER                 PIC X(03) VALUE SPACE.
            05 WS-STUD-OUT OCCURS 1 TO 10 TIMES 
                                 DEPENDING ON WS-COURSE-LGHT.
-               10 WS-STUD-OUT-GRADE  PIC 9(02),9(02).
+               10 WS-STUD-OUT-GRADE  PIC X(05).
                10 FILLER             PIC X(01) VALUE SPACE.
 
        01 WS-FOOTER-OUTPUT-1.
@@ -108,7 +112,7 @@
            05 FILLER                 PIC X(01) VALUE SPACE.
            05 FILLER                 PIC X(06) VALUE SPACE.
            05 FILLER                 PIC X(01) VALUE SPACE.
-           05 WS-OUT-CLASS-AVG       PIC 9(02),9(02).
+           05 WS-OUT-CLASS-AVG       PIC X(05).
            05 FILLER                 PIC X(03) VALUE SPACE.
            05 WS-COURSE-OUT OCCURS 1 TO 10 TIMES 
                                 DEPENDING ON WS-COURSE-LGHT.
@@ -149,6 +153,19 @@
 
        77 WS-COURSE-ID            PIC 9(02).
 
+       77 WS-1400P-COURSE-NAME    PIC X(21).
+       77 WS-1400P-COURSE-COEF    PIC 9(01)V9(01).
+       77 WS-IDX-1400             PIC 9(02).
+
+       77 WS-1500P-STUDENT-NAME    PIC X(07).
+       77 WS-1500P-STUDENT-FNAME   PIC X(06).
+       01 WS-1500R-IS-DUPLICATA    PIC 9(01).
+           88 WS-1500R-DUPLICATA-YES         VALUE 1.
+           88 WS-1500R-DUPLICATA-NO          VALUE 0.
+       77 WS-IDX-1500             PIC 9(02).
+
+       77 WS-PRESENT-STUDENT      PIC 9(04).
+
       * Used to calculate individual student and course averages.
        77 WS-MATH-BUFFER          PIC 9(05)V9(02).
       * Used to count the total coefficient.
@@ -161,6 +178,8 @@
 
        77 WS-INT-MATH-BUFFER      PIC 9(03).
        77 WS-INT-MATH-BUFFER-2    PIC 9(03).
+
+       77 WS-WRITE-NUM-BUFFER     PIC 99,99.
 
        77 WS-UTF-SIZE             PIC 9(04).
 
@@ -184,7 +203,6 @@
            STOP RUN.
 
        0100-READ-INPUT-FILE-BEGIN.
-           MOVE 0 TO WS-IDX-1.
            MOVE 0 TO WS-STUDENT-LGHT.
            MOVE 0 TO WS-COURSE-LGHT.
            OPEN INPUT F-INPUT.
@@ -195,25 +213,45 @@
                           THRU 1300-REPLACE-UTF-8-END
                        EVALUATE REC-F-INPUT-2
                            WHEN 1
-                               ADD 1 TO WS-IDX-1
-                               ADD 1 TO WS-STUDENT-LGHT
-                               IF WS-IDX-2 >
-                                  WS-COURSE-LGHT THEN
-                                   MOVE WS-IDX-2 TO WS-COURSE-LGHT
-                               END-IF
-                               MOVE 0 TO WS-IDX-2
                                MOVE R-LASTNAME 
-                                   TO WS-S-LASTNAME(WS-IDX-1)
+                                   TO WS-1500P-STUDENT-NAME
                                MOVE R-FIRSTNAME 
-                                   TO WS-S-FIRSTNAME(WS-IDX-1)
-                               MOVE R-AGE 
-                                   TO WS-S-AGE(WS-IDX-1)
+                                   TO WS-1500P-STUDENT-FNAME
+                               PERFORM 1500-GET-STUDENT-INDEX-BEGIN
+                                  THRU 1500-GET-STUDENT-INDEX-END
+                               IF WS-1500R-DUPLICATA-NO THEN
+                                   MOVE 0 TO WS-S-GRADE-AMT
+                                             (WS-STUDENT-ID)
+                                   MOVE R-LASTNAME 
+                                       TO WS-S-LASTNAME(WS-STUDENT-ID)
+                                   MOVE R-FIRSTNAME 
+                                       TO WS-S-FIRSTNAME(WS-STUDENT-ID)
+                                   MOVE R-AGE 
+                                       TO WS-S-AGE(WS-STUDENT-ID)
+                               ELSE
+                                   DISPLAY "Duplicate student "
+                                       R-LASTNAME
+                               END-IF
                            WHEN 2
-                               ADD 1 TO WS-IDX-2
-                               MOVE R-LABEL TO WS-C-NAME(WS-IDX-2)
-                               MOVE R-COEF TO WS-C-COEF(WS-IDX-2)
-                               MOVE R-GRADE 
-                                   TO WS-S-GRADE(WS-IDX-1, WS-IDX-2)
+                               MOVE R-LABEL TO WS-1400P-COURSE-NAME
+                               MOVE R-COEF TO  WS-1400P-COURSE-COEF
+                               PERFORM 1400-GET-COURSE-INDEX-BEGIN
+                                  THRU 1400-GET-COURSE-INDEX-END
+                               IF WS-S-GRADE-MISSING
+                                  (WS-STUDENT-ID, WS-COURSE-ID) THEN
+                                   MOVE R-GRADE 
+                                       TO WS-S-GRADE
+                                       (WS-STUDENT-ID, WS-COURSE-ID)
+                                   SET WS-S-GRADE-OK
+                                       (WS-STUDENT-ID, WS-COURSE-ID)
+                                       TO TRUE
+                                   ADD 1 TO WS-S-GRADE-AMT
+                                            (WS-STUDENT-ID)
+                               ELSE
+                                   DISPLAY "Duplicate grade for "
+                                           WS-S-LASTNAME(WS-STUDENT-ID)
+                                           " in " R-LABEL
+                               END-IF
                        END-EVALUATE
                END-READ
            END-PERFORM.
@@ -231,37 +269,47 @@
        0210-COMPUTE-COURSE-AVERAGE-BEGIN.
            PERFORM VARYING WS-IDX-2 FROM 1 BY 1 
                    UNTIL WS-IDX-2 > WS-COURSE-LGHT
-                   MOVE 0 TO WS-MATH-BUFFER
+               MOVE 0 TO WS-MATH-BUFFER
+               MOVE 0 TO WS-PRESENT-STUDENT
                PERFORM VARYING WS-IDX-1 FROM 1 BY 1 
                        UNTIL WS-IDX-1 > WS-STUDENT-LGHT
-                   ADD WS-S-GRADE(WS-IDX-1, WS-IDX-2) TO WS-MATH-BUFFER
+                   IF WS-S-GRADE-OK(WS-IDX-1, WS-IDX-2) THEN
+                    ADD WS-S-GRADE(WS-IDX-1, WS-IDX-2) TO WS-MATH-BUFFER
+                    ADD 1 TO WS-PRESENT-STUDENT
+                   END-IF
                END-PERFORM
                COMPUTE WS-MATH-BUFFER ROUNDED = 
-                   WS-MATH-BUFFER / WS-STUDENT-LGHT
+                   WS-MATH-BUFFER / WS-PRESENT-STUDENT
                MOVE WS-MATH-BUFFER TO WS-C-AVERAGE(WS-IDX-2)
            END-PERFORM.
        0210-COMPUTE-COURSE-AVERAGE-END.
 
        0220-COMPUTE-STUDENT-AVERAGE-BEGIN.
            MOVE 0 TO WS-MATH-BUFFER-3.
+           MOVE 0 TO WS-PRESENT-STUDENT
            PERFORM VARYING WS-IDX-1 FROM 1 BY 1 
-                       UNTIL WS-IDX-1 > WS-STUDENT-LGHT
-                   MOVE 0 TO WS-MATH-BUFFER
-                   MOVE 0 TO WS-MATH-BUFFER-2
+                   UNTIL WS-IDX-1 > WS-STUDENT-LGHT
+               MOVE 0 TO WS-MATH-BUFFER
+               MOVE 0 TO WS-MATH-BUFFER-2
                PERFORM VARYING WS-IDX-2 FROM 1 BY 1 
                    UNTIL WS-IDX-2 > WS-COURSE-LGHT
-                   COMPUTE WS-MATH-BUFFER = WS-MATH-BUFFER + 
-                           WS-S-GRADE(WS-IDX-1, WS-IDX-2) *
-                           WS-C-COEF(WS-IDX-2)
-                   ADD WS-C-COEF(WS-IDX-2) TO WS-MATH-BUFFER-2
+                   IF WS-S-GRADE-OK(WS-IDX-1, WS-IDX-2) THEN
+                       COMPUTE WS-MATH-BUFFER = WS-MATH-BUFFER + 
+                               WS-S-GRADE(WS-IDX-1, WS-IDX-2) *
+                               WS-C-COEF(WS-IDX-2)
+                       ADD WS-C-COEF(WS-IDX-2) TO WS-MATH-BUFFER-2
+                   END-IF
                END-PERFORM
-               COMPUTE WS-MATH-BUFFER ROUNDED = 
-                   WS-MATH-BUFFER / WS-MATH-BUFFER-2
-               MOVE WS-MATH-BUFFER TO WS-S-AVERAGE(WS-IDX-1)
-               ADD WS-MATH-BUFFER TO WS-MATH-BUFFER-3
+               IF WS-S-GRADE-AMT(WS-IDX-1) NOT EQUAL 0 THEN 
+                   COMPUTE WS-MATH-BUFFER ROUNDED = 
+                       WS-MATH-BUFFER / WS-MATH-BUFFER-2
+                   MOVE WS-MATH-BUFFER TO WS-S-AVERAGE(WS-IDX-1)
+                   ADD WS-MATH-BUFFER TO WS-MATH-BUFFER-3
+                   ADD 1 TO WS-PRESENT-STUDENT
+               END-IF
            END-PERFORM.
            COMPUTE WS-MATH-BUFFER-3 ROUNDED = 
-                   WS-MATH-BUFFER-3 / WS-STUDENT-LGHT
+                   WS-MATH-BUFFER-3 / WS-PRESENT-STUDENT.
            MOVE WS-MATH-BUFFER-3 TO WS-CLASS-AVERAGE.
        0220-COMPUTE-STUDENT-AVERAGE-END.
 
@@ -341,9 +389,15 @@
                        DISPLAY "                      COEF AVERAGE "
                            WITH NO ADVANCING
                    WHEN WS-COURSE-LGHT + 1
-                       DISPLAY "             AVERAGES      "
-                           WS-CLASS-AVERAGE "   "
+                       IF WS-COURSE-LGHT NOT EQUAL 0 THEN
+                           DISPLAY "             AVERAGES      "
+                               WS-CLASS-AVERAGE "   "
+                               WITH NO ADVANCING
+                       ELSE
+                           DISPLAY "             AVERAGES      "
+                           "MISS" "    "
                            WITH NO ADVANCING
+                       END-IF
                    WHEN OTHER
                        DISPLAY WS-C-NAME(WS-IDX-2) SPACE 
                            WS-C-COEF(WS-IDX-2) "  "
@@ -357,11 +411,22 @@
                            DISPLAY WS-S-LASTNAME(WS-IDX-1) SPACE
                                WITH NO ADVANCING
                        WHEN WS-COURSE-LGHT + 1
-                           DISPLAY WS-S-AVERAGE(WS-IDX-1) "   "
-                               WITH NO ADVANCING
+                           IF WS-S-GRADE-AMT(WS-IDX-1) NOT EQUAL 0 THEN
+                               DISPLAY WS-S-AVERAGE(WS-IDX-1) "   "
+                                   WITH NO ADVANCING
+                           ELSE
+                               DISPLAY "MISS    "
+                                      WITH NO ADVANCING
+                           END-IF
                        WHEN OTHER
-                           DISPLAY WS-S-GRADE(WS-IDX-1, WS-IDX-2) "   "
-                               WITH NO ADVANCING
+                           IF WS-S-GRADE-OK(WS-IDX-1, WS-IDX-2) THEN
+                               DISPLAY WS-S-GRADE(WS-IDX-1, WS-IDX-2)
+                                      "   " 
+                                      WITH NO ADVANCING
+                           ELSE
+                               DISPLAY "MISS    "
+                                      WITH NO ADVANCING
+                           END-IF
                    END-EVALUATE
                END-PERFORM
                DISPLAY SPACE
@@ -378,17 +443,33 @@
        0600-SETUP-OUTPUT-GRADE-BEGIN.
            MOVE WS-S-LASTNAME(WS-STUDENT-ID) TO WS-STUD-OUT-NAME.
            MOVE WS-S-FIRSTNAME(WS-STUDENT-ID) TO WS-STUD-OUT-FNAME.
-           MOVE WS-S-AVERAGE(WS-STUDENT-ID) TO WS-STUD-OUT-AVG.
+           IF WS-S-GRADE-AMT(WS-STUDENT-ID) NOT EQUAL 0 THEN
+               MOVE WS-S-AVERAGE(WS-STUDENT-ID) TO WS-WRITE-NUM-BUFFER
+               MOVE WS-WRITE-NUM-BUFFER TO WS-STUD-OUT-AVG
+           ELSE
+               MOVE "MISS" TO WS-STUD-OUT-AVG
+           END-IF.
 
            PERFORM VARYING WS-IDX-2 FROM 1 BY 1
                    UNTIL WS-IDX-2 > WS-COURSE-LGHT
-               MOVE WS-S-GRADE(WS-STUDENT-ID, WS-IDX-2)
-                   TO WS-STUD-OUT-GRADE(WS-IDX-2)
+               IF WS-S-GRADE-OK(WS-STUDENT-ID, WS-IDX-2) THEN
+                   MOVE WS-S-GRADE(WS-STUDENT-ID, WS-IDX-2)
+                       TO WS-WRITE-NUM-BUFFER
+                   MOVE WS-WRITE-NUM-BUFFER
+                       TO WS-STUD-OUT-GRADE(WS-IDX-2)
+               ELSE
+                   MOVE "MISS" TO WS-STUD-OUT-GRADE(WS-IDX-2)
+               END-IF
            END-PERFORM.
        0600-SETUP-OUTPUT-GRADE-END.
 
        0700-SETUP-OUTPUT-FOOTER-1-BEGIN.
-           MOVE WS-CLASS-AVERAGE TO WS-OUT-CLASS-AVG.
+           IF WS-COURSE-LGHT NOT EQUAL 0 THEN
+               MOVE WS-CLASS-AVERAGE TO WS-WRITE-NUM-BUFFER
+               MOVE WS-WRITE-NUM-BUFFER TO WS-OUT-CLASS-AVG
+           ELSE
+               MOVE "MISS" TO WS-OUT-CLASS-AVG
+           END-IF
 
            PERFORM VARYING WS-IDX-2 FROM 1 BY 1
                    UNTIL WS-IDX-2 > WS-COURSE-LGHT
@@ -454,3 +535,38 @@
                END-IF
            END-PERFORM.
        1300-REPLACE-UTF-8-END.
+
+       1400-GET-COURSE-INDEX-BEGIN.
+           MOVE 0 TO WS-COURSE-ID.
+           PERFORM VARYING WS-IDX-1400 FROM 1 BY 1
+                   UNTIL WS-IDX-1400 > WS-COURSE-LGHT
+               IF WS-C-NAME(WS-IDX-1400) EQUAL WS-1400P-COURSE-NAME
+                   MOVE WS-IDX-1400 TO WS-COURSE-ID
+               END-IF
+           END-PERFORM.
+           IF WS-COURSE-ID EQUAL 0 THEN
+               ADD 1 TO WS-COURSE-LGHT
+               MOVE WS-COURSE-LGHT TO WS-COURSE-ID
+               MOVE WS-1400P-COURSE-NAME TO WS-C-NAME(WS-COURSE-ID)
+               MOVE WS-1400P-COURSE-COEF TO WS-C-COEF(WS-COURSE-ID)
+           END-IF.
+       1400-GET-COURSE-INDEX-END.
+
+       1500-GET-STUDENT-INDEX-BEGIN.
+           SET WS-1500R-DUPLICATA-NO TO TRUE.
+           MOVE 0 TO WS-STUDENT-ID.
+           PERFORM VARYING WS-IDX-1500 FROM 1 BY 1
+                   UNTIL WS-IDX-1500 > WS-STUDENT-LGHT
+               IF WS-S-LASTNAME(WS-IDX-1500)
+                  EQUAL WS-1500P-STUDENT-NAME AND
+                  WS-S-FIRSTNAME(WS-IDX-1500) 
+                  EQUAL WS-1500P-STUDENT-FNAME
+                   MOVE WS-IDX-1500 TO WS-STUDENT-ID
+                   SET WS-1500R-DUPLICATA-YES TO TRUE
+               END-IF
+           END-PERFORM
+           IF WS-STUDENT-ID EQUAL 0 THEN
+               ADD 1 TO WS-STUDENT-LGHT
+               MOVE WS-STUDENT-LGHT TO WS-STUDENT-ID
+           END-IF.
+       1500-GET-STUDENT-INDEX-END.

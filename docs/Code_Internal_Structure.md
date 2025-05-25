@@ -199,7 +199,7 @@
       * centers the given output texts based on the maximum line width.
 ```
 
-#### 1300-REPLACE-UTF-8-BEGIN.
+#### 1300-REPLACE-UTF-8.
 ```cobol
       * Replaces all the "Ç" by "C", and then moves the rest of the
       * string, as "Ç" is not the same size as "C".
@@ -210,4 +210,20 @@
                END-IF
            END-PERFORM.
        1300-REPLACE-UTF-8-END.
+```
+
+#### 1400-GET-COURSE-INDEX.
+```cobol
+      * Looks for the course name in the course table, if it is already
+      * present, just "returns" its index, if it isn't, it makes room
+      * for the new course in the table, and return the last index.
+```
+
+#### 1500-GET-STUDENT-INDEX.
+```cobol
+      * Looks for the student name/fname pair in the student table, if
+      * it is already present, it "returns" its index, while setting
+      * the WS-1500R-DUPLICATA-YES flag to TRUE, if it isn't, it makes
+      * room for the new student in the table, and returns the last
+      * index.
 ```
