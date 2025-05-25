@@ -93,6 +93,7 @@
        0100-READ-INPUT-FILE-BEGIN.
            PERFORM UNTIL EOF
                READ
+                   PERFORM 1300-REPLACE-UTF-8
                    EVALUATE KEY
                        WHEN 1
                            STORE STUDENT
@@ -196,4 +197,17 @@
 #### 1200-CENTER-TEXT.
 ```cobol
       * centers the given output texts based on the maximum line width.
+```
+
+#### 1300-REPLACE-UTF-8-BEGIN.
+```cobol
+      * Replaces all the "Ç" by "C", and then moves the rest of the
+      * string, as "Ç" is not the same size as "C".
+       1300-REPLACE-UTF-8-BEGIN.
+           PERFORM UNTIL IDX > SIZE READ
+               IF READ(IDX) EQUAL "Ç"
+                   MOVE "C" TO READ (IDX)
+               END-IF
+           END-PERFORM.
+       1300-REPLACE-UTF-8-END.
 ```
