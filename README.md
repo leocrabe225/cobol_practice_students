@@ -8,6 +8,12 @@ The goal is to :
 
 Some attention was put towards input verification, such as UTF-8 characters, duplicate, or missing data.
 
+## How to use
+The attached Makefile has 3 main rules :
+- `make run F=<n>` to run the program with a specific file. Example : `make run F=2` to run with `data/input-1.dat`. It will output `output/output-2.dat`.
+- `make run-all` to run the program with all `data/input-*.dat` files. It will output a different output file for each input.
+- `make clean` to remove the temporary input file, the binary, and the output folder and files.
+
 ## Documentation
 ### [Code internal structure](docs/Code_Internal_Structure.md)
 ### [Input / Output](docs/Input_Output.md)
