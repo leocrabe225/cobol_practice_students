@@ -59,3 +59,14 @@ There is :
 
 You can note that the "*" separating lines fit the size of the report exactly, that's by design.\
 The titles are centered too.
+
+### Data folder
+Each input file is designed to test one or a few cases/edge cases.
+- input-1.dat : Is trapless.
+- input-2.dat : UTF-8 handling (which is only partially covered as it's only the one character).
+- input-3.dat : Course duplicata, student duplicata, and missing grade number.
+- input-4.dat : Missing grades, wherever in the courses.
+- input-5.dat : Student with no grade.
+- input-6.dat : First student misses a course.
+- input-7.dat : No grades, no courses.
+- input-8.dat : Empty file, no grades, no courses, no students.

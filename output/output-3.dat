@@ -1,0 +1,21 @@
+****************************************
+              NOTES REPORT
+****************************************
+NAME    FNAME  AVERAGE C01   C02   C03
+
+FABRE   HUGO   13,20   13,00 12,00 14,00
+NDOYE   AMADOU 10,75   10,50 09,75 11,50
+GIRARD  LOIC   12,00   11,25 MISS  12,75
+ROUX    CLAIRE 12,55   12,50 11,25 13,25
+
+CLASS          12,13   11,81 11,00 12,88
+****************************************
+C01 => COEF: 2,0 LABEL: PHYSIQUE
+C02 => COEF: 1,0 LABEL: CHIMIE
+C03 => COEF: 2,0 LABEL: BIOLOGIE
+****************************************
+STUDENTS => 04
+COURSES  => 03
+GRADES   => 11
+****************************************
+               END REPORT
